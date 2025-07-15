@@ -1,0 +1,33 @@
+
+# install crd into the cluster
+install-crd: generate
+  kubectl apply -f yaml/crd.yaml
+
+generate:
+  cargo run --bin crdgen > yaml/crd.yaml
+  helm template ../../charts/pathfinder-operator > yaml/deployment.yaml
+
+build:
+  cargo build
+
+debug: generate build
+ mirrord exec -t deploy/release-name-pathfinder-operator --steal ../../target/debug/pathfinder-operator
+
+docker-build tag="stable":
+    docker build . -t ghcr.io/runelabsxyz/pathfinder-operator:{{tag}}
+docker-snapshotter-build tag="stable":
+    docker build ./images/snapshotter -t ghcr.io/runelabsxyz/pathfinder-snapshotter:{{tag}}
+docker-push tag="stable":
+    docker push ghcr.io/runelabsxyz/pathfinder-operator:{{tag}}
+    docker push ghcr.io/runelabsxyz/pathfinder-snapshotter:{{tag}}
+
+push: (docker-build "main") (docker-snapshotter-build "main") (docker-push "main")
+push-prod: (docker-build "latest") (docker-snapshotter-build "latest") (docker-push "latest")
+
+publish: docker-build docker-snapshotter-build docker-push
+
+
+reset-crd: generate
+  kubectl delete -f yaml/crd.yaml
+  kubectl apply -f yaml/crd.yaml
+  kubectl apply -f yaml/test.yaml

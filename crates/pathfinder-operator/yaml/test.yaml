@@ -1,0 +1,34 @@
+apiVersion: runelabs.xyz/v1alpha1
+kind: StarknetNode
+metadata:
+  name: sepolia
+  namespace: default
+spec:
+  network: "testnet-sepolia"
+  snapshot:
+    checksum: "f829c5c54877876c79e01d5c6b702def905f6c8b952cbf9b3abf9d93939ffba9"
+    file_name: "testnet-sepolia_0.17.0_919396.sqlite.zst"
+    storage:
+      size: "32Gi"
+      class: "csi-cinder-sc-delete"
+  l1_rpc_secret:
+    name: sepolia-rpc-endpoint
+    key: l1_rpc
+  resources:
+    limits:
+      cpu: "4"
+      memory: "8Gi"
+    requests:
+      cpu: "4"
+      memory: "8Gi"
+  storage:
+    size: "64Gi"
+    class: "csi-cinder-sc-delete"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sepolia-rpc-endpoint
+type: Opaque
+data:
+  l1_rpc: "aHR0cHM6Ly9ldGgtc2Vwb2xpYS5nLmFsY2hlbXkuY29tL3YyL0JyUjlzM290WmhfdlJYN19FWExKQkI5bFZUSl9CTTBfCg=="

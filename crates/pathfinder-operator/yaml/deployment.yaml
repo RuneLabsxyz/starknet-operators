@@ -1,0 +1,147 @@
+---
+# Source: pathfinder-operator/templates/serviceaccount.yaml
+# Scoped service account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: release-name-pathfinder-operator
+  labels:
+    helm.sh/chart: pathfinder-operator-0.1.0
+    app.kubernetes.io/name: pathfinder-operator
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "latest"
+    app.kubernetes.io/managed-by: Helm
+  namespace: default
+automountServiceAccountToken: true
+---
+# Source: pathfinder-operator/templates/serviceaccount.yaml
+# Access for the service account
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: release-name-pathfinder-operator
+rules:
+  - apiGroups: ["runelabs.xyz"]
+    resources: ["starknetnodes", "starknetnodes/status", "starknetnodes/finalizers"]
+    verbs: ["get", "list", "watch", "patch", "update"]
+  - apiGroups: ["events.k8s.io"]
+    resources: ["events"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources:
+    - nodes
+    - namespaces
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources:
+    - persistentvolumeclaims
+    - persistentvolumeclaims/status
+    - persistentvolumeclaims/finalizers
+    verbs: ["get", "list", "watch", "patch", "update", "create", "delete"]
+  - apiGroups: ["batch"]
+    resources:
+    - jobs
+    verbs: ["get", "list", "watch", "patch", "update", "create", "delete"]
+  - apiGroups: ["events.k8s.io"]
+    resources:
+    - events
+    verbs: ["create", "patch"]
+  - apiGroups: [""]
+    resources:
+    - services
+    - pods
+    verbs: ["get", "list", "watch", "patch", "update", "create", "delete"]
+---
+# Source: pathfinder-operator/templates/serviceaccount.yaml
+# Binding the role to the account
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: release-name-pathfinder-operator
+subjects:
+- kind: ServiceAccount
+  namespace: default
+  name: release-name-pathfinder-operator
+roleRef:
+  kind: ClusterRole
+  name: release-name-pathfinder-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: pathfinder-operator/templates/service.yaml
+# Expose the http port of the service
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-pathfinder-operator
+  namespace: default
+  labels:
+    helm.sh/chart: pathfinder-operator-0.1.0
+    app.kubernetes.io/name: pathfinder-operator
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "latest"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: release-name-pathfinder-operator
+---
+# Source: pathfinder-operator/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-pathfinder-operator
+  namespace: default
+  labels:
+    helm.sh/chart: pathfinder-operator-0.1.0
+    app.kubernetes.io/name: pathfinder-operator
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "latest"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pathfinder-operator
+      app.kubernetes.io/instance: release-name
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pathfinder-operator
+        app.kubernetes.io/instance: release-name
+      annotations:
+        kubectl.kubernetes.io/default-container: pathfinder-operator
+    spec:
+      serviceAccountName: release-name-pathfinder-operator
+      securityContext:
+        {}
+      containers:
+      - name: pathfinder-operator
+        image: ghcr.io/runelabsxyz/pathfinder-operator:latest
+        imagePullPolicy: Always
+        securityContext:
+          {}
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 100Mi
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        env:
+        - name: RUST_LOG
+          value: info,kube=debug,controller=debug
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5

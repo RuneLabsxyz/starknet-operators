@@ -1,0 +1,10 @@
+{
+  "file_types": {
+    "Helm": [
+      "**/charts/**/*.yaml",
+      "**/charts/**/*.yml",
+      "**/charts/**/*.tpl",
+      "**/charts/**/NOTES.txt"
+    ]
+  }
+}
