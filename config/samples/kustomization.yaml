@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- pathfinder_v1alpha1_starknetrpc.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

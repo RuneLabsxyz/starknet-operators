@@ -22,8 +22,6 @@
     }: {
       imports = [
         inputs.devshell.flakeModule
-        inputs.rust-flake.flakeModules.default
-        inputs.rust-flake.flakeModules.nixpkgs
       ];
       flake = {
         # Put your original flake attributes here.
@@ -43,11 +41,13 @@
             kubernetes-helm
             fluxcd
             yq-go
-            cargo
-            rustc
-            rust-analyzer
             just
             mirrord
+
+            # Start using go's setup
+            go_1_24
+            kubebuilder
+            gopls
           ];
         };
       };
