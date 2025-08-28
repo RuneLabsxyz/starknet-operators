@@ -15,7 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -37,7 +36,9 @@ func (r *StarknetRPCReconciler) ReconcileArchiveRestore(ctx context.Context, clu
 	// If archive is not needed, return early
 	if !cluster.Spec.RestoreArchive.Enable {
 		// Mark the archive restore as skipped
-		condition.SetPhases(ctx, r.Client, cluster, markRestoreAsSkipped)
+		if err := condition.SetPhases(ctx, r.Client, cluster, markRestoreAsSkipped); err != nil {
+			return nil, err
+		}
 		return &ctrl.Result{}, nil
 	}
 
@@ -66,7 +67,10 @@ func (r *StarknetRPCReconciler) ReconcileArchiveRestore(ctx context.Context, clu
 	restoreJob := r.GetWantedRestoreJob(cluster)
 	err = r.Create(ctx, &restoreJob)
 	if err == nil {
-		condition.SetPhases(ctx, r.Client, cluster, markRestoreAsProgressing)
+		err := condition.SetPhases(ctx, r.Client, cluster, markRestoreAsProgressing)
+		if err != nil {
+			return nil, err
+		}
 		// We just created the job, so early exit
 		return &ctrl.Result{RequeueAfter: time.Second}, errs.ErrNextLoop
 	} else if !apierrs.IsAlreadyExists(err) {
@@ -75,13 +79,19 @@ func (r *StarknetRPCReconciler) ReconcileArchiveRestore(ctx context.Context, clu
 
 	if restoreJob.Status.Succeeded > 0 {
 		// Mark the job as completed
-		condition.SetPhases(ctx, r.Client, cluster, markArchiveAsFinished)
+		err := condition.SetPhases(ctx, r.Client, cluster, markArchiveAsFinished)
+		if err != nil {
+			return nil, err
+		}
 
 		// We completed the archive! Let's re-run the loop to continue the setup
 		return &ctrl.Result{RequeueAfter: time.Second}, errs.ErrNextLoop
 	} else if restoreJob.Status.Failed > 0 {
 		// Mark the job as completed
-		condition.SetPhases(ctx, r.Client, cluster, markRestoreAsFailed)
+		err := condition.SetPhases(ctx, r.Client, cluster, markRestoreAsFailed)
+		if err != nil {
+			return nil, err
+		}
 		// We completed the archive! Let's re-run the loop to continue the setup
 		return nil, errs.ErrTerminateLoop
 	} else {
@@ -159,33 +169,33 @@ func (r *StarknetRPCReconciler) GetWantedRestoreJob(cluster *v1alpha1.StarknetRP
 					// TODO: Handle failures ourselves
 					RestartPolicy: corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
-						corev1.Container{
+						{
 							Name:  "archive-downloader",
 							Image: getImage(&cluster.Spec.RestoreArchive),
 							Env: []corev1.EnvVar{
-								corev1.EnvVar{
+								{
 									Name:  "PATHFINDER_NETWORK",
 									Value: cluster.Spec.Network,
 								},
-								corev1.EnvVar{
+								{
 									Name:  "PATHFINDER_FILE_NAME",
 									Value: cluster.Spec.RestoreArchive.FileName,
 								},
-								corev1.EnvVar{
+								{
 									Name:  "PATHFINDER_CHECKSUM",
 									Value: cluster.Spec.RestoreArchive.Checksum,
 								},
-								corev1.EnvVar{
+								{
 									Name:  "PATHFINDER_DOWNLOAD_URL",
 									Value: *cluster.Spec.RestoreArchive.RsyncConfig,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
-								corev1.VolumeMount{
+								{
 									Name:      "snapshot-scratch",
 									MountPath: "/scratch",
 								},
-								corev1.VolumeMount{
+								{
 									Name:      "data",
 									MountPath: "/data",
 								},
@@ -193,7 +203,7 @@ func (r *StarknetRPCReconciler) GetWantedRestoreJob(cluster *v1alpha1.StarknetRP
 						},
 					},
 					Volumes: []corev1.Volume{
-						corev1.Volume{
+						{
 							Name: "data",
 							VolumeSource: corev1.VolumeSource{
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
@@ -201,7 +211,7 @@ func (r *StarknetRPCReconciler) GetWantedRestoreJob(cluster *v1alpha1.StarknetRP
 								},
 							},
 						},
-						corev1.Volume{
+						{
 							Name: "snapshot-scratch",
 							VolumeSource: corev1.VolumeSource{
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
@@ -214,9 +224,6 @@ func (r *StarknetRPCReconciler) GetWantedRestoreJob(cluster *v1alpha1.StarknetRP
 			},
 		},
 	}
-
-	controllerutil.SetControllerReference(cluster, &job, r.Scheme)
-
 	return job
 }
 
@@ -235,6 +242,16 @@ func (r *StarknetRPCReconciler) GetWantedRestorePvc(cluster *v1alpha1.StarknetRP
 			Annotations: make(map[string]string),
 			Name:        nameInfo.Name,
 			Namespace:   nameInfo.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         cluster.APIVersion,
+					Kind:               cluster.Kind,
+					Name:               cluster.Name,
+					UID:                cluster.UID,
+					Controller:         &[]bool{true}[0],
+					BlockOwnerDeletion: &[]bool{true}[0],
+				},
+			},
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -248,8 +265,6 @@ func (r *StarknetRPCReconciler) GetWantedRestorePvc(cluster *v1alpha1.StarknetRP
 			},
 		},
 	}
-
-	controllerutil.SetControllerReference(cluster, &pvc, r.Scheme)
 
 	return pvc
 }

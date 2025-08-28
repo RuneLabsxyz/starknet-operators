@@ -30,28 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// runProxyRequest makes a GET call on the pod interface proxy, and returns the raw response
-func runProxyRequest(
-	ctx context.Context,
-	kubeInterface kubernetes.Interface,
-	pod *corev1.Pod,
-	tlsEnabled bool,
-	path string,
-	port int,
-) ([]byte, error) {
-	portString := strconv.Itoa(port)
-
-	schema := "http"
-	if tlsEnabled {
-		schema = "https"
-	}
-
-	req := kubeInterface.CoreV1().Pods(pod.Namespace).ProxyGet(
-		schema, pod.Name, portString, path, map[string]string{})
-
-	return req.DoRaw(ctx)
-}
-
 func getNamedPort(pod *corev1.Pod, name string) int {
 	for _, port := range pod.Spec.Containers[0].Ports {
 		if port.Name == name {

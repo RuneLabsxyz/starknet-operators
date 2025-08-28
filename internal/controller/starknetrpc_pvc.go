@@ -12,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -64,6 +63,16 @@ func (r *StarknetRPCReconciler) GetWantedPvc(cluster *v1alpha1.StarknetRPC) core
 			Annotations: make(map[string]string),
 			Name:        nameInfo.Name,
 			Namespace:   nameInfo.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         cluster.APIVersion,
+					Kind:               cluster.Kind,
+					Name:               cluster.Name,
+					UID:                cluster.UID,
+					Controller:         &[]bool{true}[0],
+					BlockOwnerDeletion: &[]bool{true}[0],
+				},
+			},
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -77,8 +86,6 @@ func (r *StarknetRPCReconciler) GetWantedPvc(cluster *v1alpha1.StarknetRPC) core
 			},
 		},
 	}
-
-	controllerutil.SetControllerReference(cluster, &pvc, r.Scheme)
 
 	return pvc
 }

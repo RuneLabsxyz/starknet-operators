@@ -13,7 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func (r *StarknetRPCReconciler) ReconcilePod(ctx context.Context, cluster *v1alpha1.StarknetRPC) (*ctrl.Result, error) {
@@ -22,7 +21,10 @@ func (r *StarknetRPCReconciler) ReconcilePod(ctx context.Context, cluster *v1alp
 	err := r.Create(ctx, &pod)
 	if err == nil {
 		// Mark the pod as created & pending
-		condition.SetPhases(ctx, r.Client, cluster, markRpcAsPending)
+		err := condition.SetPhases(ctx, r.Client, cluster, markRpcAsPending)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if err != nil && !apierrs.IsAlreadyExists(err) {
@@ -37,7 +39,10 @@ func (r *StarknetRPCReconciler) ReconcilePod(ctx context.Context, cluster *v1alp
 
 	// Try to make a request to the pod
 	if ok, err := proxy.IsReady(ctx, r.Interface, cluster, fetchedPod); err == nil && ok {
-		condition.SetPhases(ctx, r.Client, cluster, markRpcAsCatchingUp)
+		err := condition.SetPhases(ctx, r.Client, cluster, markRpcAsCatchingUp)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// For now, stop here.
@@ -59,15 +64,6 @@ func markRpcAsCatchingUp(cluster *v1alpha1.StarknetRPC) {
 	meta.SetStatusCondition(&cluster.Status.Conditions, metav1.Condition{
 		Type:    "Available",
 		Status:  metav1.ConditionFalse,
-		Reason:  "CatchingUp",
-		Message: "Syncing with the blockchain",
-	})
-}
-
-func markRpcAsReady(cluster *v1alpha1.StarknetRPC) {
-	meta.SetStatusCondition(&cluster.Status.Conditions, metav1.Condition{
-		Type:    "Available",
-		Status:  metav1.ConditionTrue,
 		Reason:  "CatchingUp",
 		Message: "Syncing with the blockchain",
 	})
@@ -97,6 +93,16 @@ func (r *StarknetRPCReconciler) GetWantedPod(cluster *v1alpha1.StarknetRPC) core
 			Annotations: make(map[string]string),
 			Name:        nameInfo.Name,
 			Namespace:   nameInfo.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         cluster.APIVersion,
+					Kind:               cluster.Kind,
+					Name:               cluster.Name,
+					UID:                cluster.UID,
+					Controller:         &[]bool{true}[0],
+					BlockOwnerDeletion: &[]bool{true}[0],
+				},
+			},
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
@@ -166,8 +172,6 @@ func (r *StarknetRPCReconciler) GetWantedPod(cluster *v1alpha1.StarknetRPC) core
 			},
 		},
 	}
-
-	controllerutil.SetControllerReference(cluster, &pod, r.Scheme)
 
 	return pod
 }
