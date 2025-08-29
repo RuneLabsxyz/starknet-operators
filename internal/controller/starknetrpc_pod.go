@@ -6,10 +6,10 @@ import (
 
 	"github.com/runelabs-xyz/starknet-operators/api/v1alpha1"
 	"github.com/runelabs-xyz/starknet-operators/internal/utils/condition"
+	"github.com/runelabs-xyz/starknet-operators/internal/utils/condition/starknetrpc"
 	"github.com/runelabs-xyz/starknet-operators/internal/utils/proxy"
+	"github.com/runelabs-xyz/starknet-operators/internal/utils/reconciler"
 	corev1 "k8s.io/api/core/v1"
-	apierrs "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -18,28 +18,27 @@ import (
 func (r *StarknetRPCReconciler) ReconcilePod(ctx context.Context, cluster *v1alpha1.StarknetRPC) (*ctrl.Result, error) {
 	// Create PVC (if it not already exists)
 	pod := r.GetWantedPod(cluster)
-	err := r.Create(ctx, &pod)
-	if err == nil {
+
+	created, err := reconciler.CreateOrReconcile(ctx, r.Client, &pod,
+		ImageReconciler(cluster),
+	)
+	if err != nil {
+		return nil, err
+	} else if created {
 		// Mark the pod as created & pending
-		err := condition.SetPhases(ctx, r.Client, cluster, markRpcAsPending)
+		err := condition.SetPhases(ctx, r.Client, cluster,
+			starknetrpc.StarknetRPCAvailableStatusCreating.Apply(),
+		)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if err != nil && !apierrs.IsAlreadyExists(err) {
-		return nil, err
-	}
-
-	// Fetch the pod
-	fetchedPod := &corev1.Pod{}
-	if err := r.Get(ctx, types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, fetchedPod); err != nil {
-		return nil, err
-	}
-
 	// Try to make a request to the pod
-	if ok, err := proxy.IsReady(ctx, r.Interface, cluster, fetchedPod); err == nil && ok {
-		err := condition.SetPhases(ctx, r.Client, cluster, markRpcAsCatchingUp)
+	if ok, err := proxy.IsReady(ctx, r.Interface, cluster, &pod); err == nil && ok {
+		err := condition.SetPhases(ctx, r.Client, cluster,
+			starknetrpc.StarknetRPCAvailableStatusCatchingUp.Apply(),
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -51,22 +50,17 @@ func (r *StarknetRPCReconciler) ReconcilePod(ctx context.Context, cluster *v1alp
 	return &ctrl.Result{}, nil
 }
 
-func markRpcAsPending(cluster *v1alpha1.StarknetRPC) {
-	meta.SetStatusCondition(&cluster.Status.Conditions, metav1.Condition{
-		Type:    "Available",
-		Status:  metav1.ConditionFalse,
-		Reason:  "Pending",
-		Message: "Starting RPC node",
-	})
-}
-
-func markRpcAsCatchingUp(cluster *v1alpha1.StarknetRPC) {
-	meta.SetStatusCondition(&cluster.Status.Conditions, metav1.Condition{
-		Type:    "Available",
-		Status:  metav1.ConditionFalse,
-		Reason:  "CatchingUp",
-		Message: "Syncing with the blockchain",
-	})
+func ImageReconciler(rpc *v1alpha1.StarknetRPC) reconciler.ObjectReconcilier[*corev1.Pod] {
+	return reconciler.ObjectReconcilier[*corev1.Pod]{
+		Name: "ImageReconciler",
+		IsUpToDate: func(pod *corev1.Pod) bool {
+			return pod.Spec.Containers[0].Image == getPodImage(rpc)
+		},
+		Update: func(pod *corev1.Pod) error {
+			pod.Spec.Containers[0].Image = getPodImage(rpc)
+			return nil
+		},
+	}
 }
 
 func (r *StarknetRPCReconciler) GetPodName(cluster *v1alpha1.StarknetRPC) types.NamespacedName {

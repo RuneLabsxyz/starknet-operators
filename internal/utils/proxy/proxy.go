@@ -26,6 +26,7 @@ import (
 
 	"github.com/runelabs-xyz/starknet-operators/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -40,6 +41,10 @@ func getNamedPort(pod *corev1.Pod, name string) int {
 }
 
 func IsReady(ctx context.Context, kubeInterface kubernetes.Interface, rpc *v1alpha1.StarknetRPC, pod *corev1.Pod) (bool, error) {
+	if pod.Status.Phase != corev1.PodRunning {
+		// If the pod is not running, it is not ready
+		return false, nil
+	}
 	// Find named port "management"
 	port := strconv.Itoa(getNamedPort(pod, "management"))
 	schema := "http"
@@ -52,7 +57,11 @@ func IsReady(ctx context.Context, kubeInterface kubernetes.Interface, rpc *v1alp
 
 	_, err := req.DoRaw(ctx)
 	if err != nil {
-		log.FromContext(ctx).Error(err, "Failed to get ready status")
+		if errors.IsBadRequest(err) || errors.IsServiceUnavailable(err) {
+			// This is possible that the pod hasn't been started yet
+			return false, nil
+		}
+		log.FromContext(ctx).Error(err, "Failed to get ready status", "reason", errors.ReasonForError(err))
 		return false, err
 	}
 

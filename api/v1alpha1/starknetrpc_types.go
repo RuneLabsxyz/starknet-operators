@@ -32,7 +32,7 @@ type StorageTemplate struct {
 	//
 	// If not set uses the default storage class.
 	// +optional
-	StorageClass string `json:"storageClass,omitempty"`
+	Class string `json:"class,omitempty"`
 }
 
 type ArchiveSnapshot struct {
@@ -41,7 +41,7 @@ type ArchiveSnapshot struct {
 	// It is volountary that you need to set other values, as this is stongly discouraged!
 	// (At least until the snapshot system is done)
 	// +default true
-	Enable bool `json:"enable,omitempty"`
+	Enable *bool `json:"enable,omitempty"`
 	// fileName Is the name of the snapshot file to restore
 	// +required
 	FileName string `json:"fileName"` // TODO(Red): Make it optional, and fetch the data from the snapshot service

@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/runelabs-xyz/starknet-operators/api/v1alpha1"
+	"github.com/runelabs-xyz/starknet-operators/internal/utils/condition"
+	"github.com/runelabs-xyz/starknet-operators/internal/utils/condition/starknetrpc"
 	reconcilier "github.com/runelabs-xyz/starknet-operators/internal/utils/reconciler"
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -16,9 +18,20 @@ import (
 )
 
 func (r *StarknetRPCReconciler) ReconcilePvc(ctx context.Context, cluster *v1alpha1.StarknetRPC) (*ctrl.Result, error) {
+	contextLogger := log.FromContext(ctx)
 	// Create PVC (if it not already exists)
 	pvc := r.GetWantedPvc(cluster)
-	if err := r.Create(ctx, &pvc); err != nil && !apierrs.IsAlreadyExists(err) {
+	err := r.Create(ctx, &pvc)
+	if err == nil {
+		contextLogger.V(1).Info("PVC created", "name", pvc.Name)
+
+		// We need to reset the archive status!
+		condition.SetPhases(ctx, r.Client, cluster,
+			starknetrpc.StarknetRPCRestoreStatusPending.Apply(),
+		)
+
+		return &ctrl.Result{}, nil
+	} else if !apierrs.IsAlreadyExists(err) {
 		return nil, err
 	}
 
@@ -32,11 +45,12 @@ func (r *StarknetRPCReconciler) EnsurePvcReady(ctx context.Context, cluster *v1a
 	var pvc corev1.PersistentVolumeClaim
 
 	if err := r.Get(ctx, r.GetStoragePvcName(cluster), &pvc); err != nil {
+		contextLogger.V(1).Info("Failed to get PVC", "error", err)
 		return nil, err
 	}
 
 	if !isReady(&pvc) {
-		contextLogger.V(4).Info("PVC is not ready yet", "pvc", pvc.Name)
+		contextLogger.V(10).Info("PVC is not ready yet", "pvc", pvc.Name)
 
 		return &ctrl.Result{RequeueAfter: time.Second}, reconcilier.ErrNextLoop
 	}
@@ -78,7 +92,7 @@ func (r *StarknetRPCReconciler) GetWantedPvc(cluster *v1alpha1.StarknetRPC) core
 			AccessModes: []corev1.PersistentVolumeAccessMode{
 				corev1.ReadWriteOnce,
 			},
-			StorageClassName: &cluster.Spec.Storage.StorageClass,
+			StorageClassName: &cluster.Spec.Storage.Class,
 			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceStorage: cluster.Spec.Storage.Size,

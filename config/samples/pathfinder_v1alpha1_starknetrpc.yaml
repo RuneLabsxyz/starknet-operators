@@ -6,4 +6,27 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: starknetrpc-sample
 spec:
-  # TODO(user): Add fields here
+  network: "testnet-sepolia"
+  image: "eqlabs/pathfinder:v0.19.0"
+  restoreArchive:
+    checksum: "4aa154c4474d6b274410ff7e85dfc104f270f4337efbb5e03bf02950907bb3fb"
+    fileName: "testnet-sepolia_0.18.0_1706740.sqlite.zst"
+    storage:
+      size: "32Gi"
+      class: "csi-cinder-sc-delete"
+
+  layer1RpcSecret:
+    name: sepolia-rpc-endpoint
+    key: l1_rpc
+
+  resources:
+    limits:
+      cpu: "4"
+      memory: "8Gi"
+    requests:
+      cpu: "4"
+      memory: "8Gi"
+
+  storage:
+    size: "64Gi"
+    class: "csi-cinder-sc-delete"

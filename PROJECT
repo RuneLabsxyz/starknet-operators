@@ -5,6 +5,9 @@
 domain: runelabs.xyz
 layout:
 - go.kubebuilder.io/v4
+plugins:
+  grafana.kubebuilder.io/v1-alpha: {}
+  helm.kubebuilder.io/v1-alpha: {}
 projectName: go
 repo: github.com/runelabs-xyz/starknet-operators
 resources:

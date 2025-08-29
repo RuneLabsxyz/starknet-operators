@@ -207,6 +207,7 @@ func main() {
 		Interface: kubernetes.NewForConfigOrDie(mgr.GetConfig()),
 		Client:    mgr.GetClient(),
 		Scheme:    mgr.GetScheme(),
+		Recorder:  mgr.GetEventRecorderFor("starknet-rpc-controller"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "StarknetRPC")
 		os.Exit(1)
