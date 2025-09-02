@@ -80,10 +80,15 @@ func getPodImage(rpc *v1alpha1.StarknetRPC) string {
 func (r *StarknetRPCReconciler) GetWantedPod(cluster *v1alpha1.StarknetRPC) corev1.Pod {
 	var userId int64 = 1000
 
+	var labels map[string]string = map[string]string{
+		"rpc.runelabs.xyz/type": "starknet",
+		"runelabs.xyz/network":  cluster.Spec.Network,
+	}
+
 	nameInfo := r.GetPodName(cluster)
 	pod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:      make(map[string]string),
+			Labels:      labels,
 			Annotations: make(map[string]string),
 			Name:        nameInfo.Name,
 			Namespace:   nameInfo.Namespace,
@@ -126,6 +131,10 @@ func (r *StarknetRPCReconciler) GetWantedPod(cluster *v1alpha1.StarknetRPC) core
 							ValueFrom: &corev1.EnvVarSource{
 								SecretKeyRef: &cluster.Spec.Layer1RpcSecret,
 							},
+						},
+						{
+							Name:  "PATHFINDER_WEBSOCKET_ENABLED",
+							Value: "true",
 						},
 					},
 					Resources: cluster.Spec.Resources,
