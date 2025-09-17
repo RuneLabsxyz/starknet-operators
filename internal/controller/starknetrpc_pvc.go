@@ -26,9 +26,12 @@ func (r *StarknetRPCReconciler) ReconcilePvc(ctx context.Context, cluster *v1alp
 		contextLogger.V(1).Info("PVC created", "name", pvc.Name)
 
 		// We need to reset the archive status!
-		condition.SetPhases(ctx, r.Client, cluster,
+		err := condition.SetPhases(ctx, r.Client, cluster,
 			starknetrpc.StarknetRPCRestoreStatusPending.Apply(),
 		)
+		if err != nil {
+			return nil, err
+		}
 
 		return &ctrl.Result{}, nil
 	} else if !apierrs.IsAlreadyExists(err) {
