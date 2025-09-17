@@ -12,4 +12,16 @@ entries:
     urls:
     - https://github.com/RuneLabsxyz/starknet-operators/releases/download/go-0.1.0/go-0.1.0.tgz
     version: 0.1.0
-generated: "2025-09-17T19:37:30.595072044Z"
+  starknet-operators:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2025-09-17T19:38:50.612896874Z"
+    description: A Helm chart to distribute the project starknet-operators
+    digest: fcc01a7edb5b0cd6b981f664d93ac36afc9c66c6dd4c46bac0fed6e6f9d5063d
+    icon: https://example.com/icon.png
+    name: starknet-operators
+    type: application
+    urls:
+    - https://github.com/RuneLabsxyz/starknet-operators/releases/download/starknet-operators-0.1.0/starknet-operators-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-09-17T19:38:50.612908656Z"
