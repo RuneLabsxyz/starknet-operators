@@ -91,6 +91,13 @@ type StarknetRPCSpec struct {
 	// storage The storage configuration for the node
 	Storage StorageTemplate `json:"storage"`
 
+	// tolerations Is the tolerations configuration for the pod that runs the RPC node
+	//
+	// It can be used to segment the RPC inside of a dedicated node.
+	// +optional
+	// +listType=atomic
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
 	// layer1RpcSecret Is the secret containing the Layer 1 RPC secret key
 	// for synchronization
 	Layer1RpcSecret corev1.SecretKeySelector `json:"layer1RpcSecret"`

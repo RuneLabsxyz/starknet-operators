@@ -9,6 +9,7 @@ import (
 	"github.com/runelabs-xyz/starknet-operators/internal/utils/condition/starknetrpc"
 	"github.com/runelabs-xyz/starknet-operators/internal/utils/proxy"
 	"github.com/runelabs-xyz/starknet-operators/internal/utils/reconciler"
+	errs "github.com/runelabs-xyz/starknet-operators/internal/utils/reconciler"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,6 +35,15 @@ func (r *StarknetRPCReconciler) ReconcilePod(ctx context.Context, cluster *v1alp
 		}
 	}
 
+	if shouldPodGetRecreated(&pod) {
+		// It should immediately reconcile
+		if err := r.Client.Delete(ctx, &pod); err != nil {
+			return nil, err
+		}
+
+		return &ctrl.Result{Requeue: true}, errs.ErrNextLoop
+
+	}
 	// Try to make a request to the pod
 	if ok, err := proxy.IsReady(ctx, r.Interface, cluster, &pod); err == nil && ok {
 		err := condition.SetPhases(ctx, r.Client, cluster,
@@ -68,6 +78,28 @@ func (r *StarknetRPCReconciler) GetPodName(cluster *v1alpha1.StarknetRPC) types.
 		Name:      fmt.Sprintf("%s-rpc", cluster.Name),
 		Namespace: cluster.Namespace,
 	}
+}
+
+func shouldPodGetRecreated(pod *corev1.Pod) bool {
+	// This is bad! Pods will never be restarted when evicted
+	if pod.Status.Reason == "Evicted" {
+		return true
+	}
+
+	for _, cs := range pod.Status.ContainerStatuses {
+		// Calculate total restarts
+		restartCount := cs.RestartCount
+
+		if cs.State.Waiting != nil {
+			reason := cs.State.Waiting.Reason
+			if reason == "CrashLoopBackOff" && restartCount > 5 {
+				// If restart count exceeds a certain threshold, consider the pod unhealthy
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func getPodImage(rpc *v1alpha1.StarknetRPC) string {
@@ -136,6 +168,10 @@ func (r *StarknetRPCReconciler) GetWantedPod(cluster *v1alpha1.StarknetRPC) core
 							Name:  "PATHFINDER_WEBSOCKET_ENABLED",
 							Value: "true",
 						},
+						{
+							Name:  "PATHFINDER_HEAD_POLL_INTERVAL_SECONDS",
+							Value: "2",
+						},
 					},
 					Resources: cluster.Spec.Resources,
 					Ports: []corev1.ContainerPort{
@@ -166,6 +202,7 @@ func (r *StarknetRPCReconciler) GetWantedPod(cluster *v1alpha1.StarknetRPC) core
 					},
 				},
 			},
+			Tolerations: cluster.Spec.Tolerations,
 			// Default security context. Cannot be modified for now
 			// TODO: Support custom security context for custom images
 			SecurityContext: &corev1.PodSecurityContext{
