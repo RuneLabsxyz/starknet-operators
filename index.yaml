@@ -1,0 +1,15 @@
+apiVersion: v1
+entries:
+  go:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2025-09-17T19:37:30.595065602Z"
+    description: A Helm chart to distribute the project go
+    digest: 6bcece067c882363d6073128edc6eefb993e82c609374a8ffc1aa8847483aa57
+    icon: https://example.com/icon.png
+    name: go
+    type: application
+    urls:
+    - https://github.com/RuneLabsxyz/starknet-operators/releases/download/go-0.1.0/go-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-09-17T19:37:30.595072044Z"
