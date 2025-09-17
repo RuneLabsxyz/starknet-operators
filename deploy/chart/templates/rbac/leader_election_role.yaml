@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "chart.labels" . | nindent 4 }}
   namespace: {{ .Release.Namespace }}
-  name: go-leader-election-role
+  name: starknet-operators-leader-election-role
 rules:
 - apiGroups:
   - ""

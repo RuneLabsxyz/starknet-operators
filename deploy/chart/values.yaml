@@ -38,7 +38,7 @@ controllerManager:
     seccompProfile:
       type: RuntimeDefault
   terminationGracePeriodSeconds: 10
-  serviceAccountName: go-controller-manager
+  serviceAccountName: starknet-operators-controller-manager
 
 # [RBAC]: To enable RBAC (Permissions) configurations
 rbac:

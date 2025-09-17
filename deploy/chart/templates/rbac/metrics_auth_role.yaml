@@ -4,7 +4,7 @@ kind: ClusterRole
 metadata:
   labels:
     {{- include "chart.labels" . | nindent 4 }}
-  name: go-metrics-auth-role
+  name: starknet-operators-metrics-auth-role
 rules:
 - apiGroups:
   - authentication.k8s.io

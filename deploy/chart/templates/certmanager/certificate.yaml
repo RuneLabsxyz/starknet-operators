@@ -25,9 +25,9 @@ metadata:
     {{- include "chart.labels" . | nindent 4 }}
 spec:
   dnsNames:
-    - go.{{ .Release.Namespace }}.svc
-    - go.{{ .Release.Namespace }}.svc.cluster.local
-    - go-webhook-service.{{ .Release.Namespace }}.svc
+    - starknet-operators.{{ .Release.Namespace }}.svc
+    - starknet-operators.{{ .Release.Namespace }}.svc.cluster.local
+    - starknet-operators-webhook-service.{{ .Release.Namespace }}.svc
   issuerRef:
     kind: Issuer
     name: selfsigned-issuer
@@ -49,9 +49,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   dnsNames:
-    - go.{{ .Release.Namespace }}.svc
-    - go.{{ .Release.Namespace }}.svc.cluster.local
-    - go-metrics-service.{{ .Release.Namespace }}.svc
+    - starknet-operators.{{ .Release.Namespace }}.svc
+    - starknet-operators.{{ .Release.Namespace }}.svc.cluster.local
+    - starknet-operators-metrics-service.{{ .Release.Namespace }}.svc
   issuerRef:
     kind: Issuer
     name: selfsigned-issuer

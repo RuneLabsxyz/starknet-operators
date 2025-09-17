@@ -5,7 +5,7 @@ kind: ClusterRole
 metadata:
   labels:
     {{- include "chart.labels" . | nindent 4 }}
-  name: go-manager-role
+  name: starknet-operators-manager-role
 rules:
 - apiGroups:
   - pathfinder.runelabs.xyz

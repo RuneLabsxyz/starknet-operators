@@ -5,10 +5,10 @@
   {{- else if .Values.nameOverride }}
     {{ .Values.nameOverride | trunc 63 | trimSuffix "-" }}
   {{- else }}
-    go
+    starknet-operators
   {{- end }}
 {{- else }}
-  go
+  starknet-operators
 {{- end }}
 {{- end }}
 
