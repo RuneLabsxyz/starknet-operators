@@ -1,6 +1,6 @@
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
-SNAPSHOTTER_IMG ?= snapshotter:latest
+IMG ?= ghcr.io/runelabsxyz/starknet-operators:latest
+SNAPSHOTTER_IMG ?= ghcr.io/runelabsxyz/pathfinder-snapshotter:latest
 SNAPSHOTTER_DIR = images/snapshotter
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -21,7 +21,7 @@ CONTAINER_TOOL ?= docker
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-.PHONY: all
+.PHONY : all
 all: build
 
 ##@ General

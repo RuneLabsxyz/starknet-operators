@@ -30,9 +30,7 @@ rules:
   - pods/proxy
   verbs:
   - create
-  - delete
-  - patch
-  - update
+  - get
 - apiGroups:
   - batch
   resources:

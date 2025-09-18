@@ -41,7 +41,7 @@ import (
 //+kubebuilder:rbac:groups=pathfinder.runelabs.xyz,resources=starknetrpcs/finalizers,verbs=update
 //+kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=pods/proxy,verbs=create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=pods/proxy,verbs=get;create
 //+kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 
