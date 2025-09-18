@@ -36,6 +36,15 @@ import (
 	errs "github.com/runelabs-xyz/starknet-operators/internal/utils/reconciler"
 )
 
+//+kubebuilder:rbac:groups=pathfinder.runelabs.xyz,resources=starknetrpcs,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=pathfinder.runelabs.xyz,resources=starknetrpcs/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=pathfinder.runelabs.xyz,resources=starknetrpcs/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
+//+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=pods/proxy,verbs=create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
+
 // StarknetRPCReconciler reconciles a StarknetRPC object
 type StarknetRPCReconciler struct {
 	kubernetes.Interface
@@ -44,15 +53,6 @@ type StarknetRPCReconciler struct {
 	Recorder record.EventRecorder
 }
 
-// +kubebuilder:rbac:groups=pathfinder.runelabs.xyz,resources=starknetrpcs,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=pathfinder.runelabs.xyz,resources=starknetrpcs/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=pathfinder.runelabs.xyz,resources=starknetrpcs/finalizers,verbs=update
-// +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
-// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core,resources=pods/proxy,verbs=create;update;patch;delete
-// +kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
-//
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
