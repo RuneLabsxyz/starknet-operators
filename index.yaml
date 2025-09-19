@@ -14,6 +14,17 @@ entries:
     version: 0.1.0
   starknet-operators:
   - apiVersion: v2
+    appVersion: 0.2.0
+    created: "2025-09-19T16:55:53.910524601Z"
+    description: A Helm chart to distribute the project starknet-operators
+    digest: adf0613ba90a2b3d498e963a7c786d3ba1fdcf4dc0e372f911f23047f0986169
+    icon: https://example.com/icon.png
+    name: starknet-operators
+    type: application
+    urls:
+    - https://github.com/RuneLabsxyz/starknet-operators/releases/download/starknet-operators-0.2.0/starknet-operators-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v2
     appVersion: 0.1.2
     created: "2025-09-18T14:02:33.176211522Z"
     description: A Helm chart to distribute the project starknet-operators
@@ -46,4 +57,4 @@ entries:
     urls:
     - https://github.com/RuneLabsxyz/starknet-operators/releases/download/starknet-operators-0.1.0/starknet-operators-0.1.0.tgz
     version: 0.1.0
-generated: "2025-09-18T14:02:33.176224386Z"
+generated: "2025-09-19T16:55:53.910543346Z"
