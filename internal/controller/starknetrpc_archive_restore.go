@@ -33,7 +33,7 @@ func (r *StarknetRPCReconciler) ReconcileArchiveRestore(ctx context.Context, clu
 
 		deletePropagation := metav1.DeletePropagationBackground
 
-		err := r.Client.Delete(ctx, &restoreJob, &client.DeleteOptions{
+		err := r.Delete(ctx, &restoreJob, &client.DeleteOptions{
 			PropagationPolicy: &deletePropagation,
 		})
 		if client.IgnoreNotFound(err) != nil {
@@ -42,7 +42,7 @@ func (r *StarknetRPCReconciler) ReconcileArchiveRestore(ctx context.Context, clu
 
 		// Also Delete the PVC if it still exists
 		restorePvc := r.GetWantedRestorePvc(cluster)
-		err = r.Client.Delete(ctx, &restorePvc)
+		err = r.Delete(ctx, &restorePvc)
 		if client.IgnoreNotFound(err) != nil {
 			return nil, err
 		}

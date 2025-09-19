@@ -9,7 +9,6 @@ import (
 	"github.com/runelabs-xyz/starknet-operators/internal/utils/condition/starknetrpc"
 	"github.com/runelabs-xyz/starknet-operators/internal/utils/proxy"
 	"github.com/runelabs-xyz/starknet-operators/internal/utils/reconciler"
-	errs "github.com/runelabs-xyz/starknet-operators/internal/utils/reconciler"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -37,11 +36,11 @@ func (r *StarknetRPCReconciler) ReconcilePod(ctx context.Context, cluster *v1alp
 
 	if shouldPodGetRecreated(&pod) {
 		// It should immediately reconcile
-		if err := r.Client.Delete(ctx, &pod); err != nil {
+		if err := r.Delete(ctx, &pod); err != nil {
 			return nil, err
 		}
 
-		return &ctrl.Result{Requeue: true}, errs.ErrNextLoop
+		return &ctrl.Result{Requeue: true}, reconciler.ErrNextLoop
 
 	}
 	// Try to make a request to the pod
@@ -112,7 +111,7 @@ func getPodImage(rpc *v1alpha1.StarknetRPC) string {
 func (r *StarknetRPCReconciler) GetWantedPod(cluster *v1alpha1.StarknetRPC) corev1.Pod {
 	var userId int64 = 1000
 
-	var labels map[string]string = map[string]string{
+	var labels = map[string]string{
 		"rpc.runelabs.xyz/type": "starknet",
 		"rpc.runelabs.xyz/name": cluster.Name,
 		"runelabs.xyz/network":  cluster.Spec.Network,
