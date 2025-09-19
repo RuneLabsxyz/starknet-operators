@@ -66,6 +66,19 @@ type ArchiveSnapshot struct {
 	Storage StorageTemplate `json:"storage"`
 }
 
+// PodMonitor defines the configuration for Prometheus monitoring
+type PodMonitor struct {
+	// enabled indicates if the PodMonitor should be created for monitoring.
+	// When false (default), no PodMonitor will be created.
+	// +optional
+	// +kubebuilder:default=false
+	Enabled bool `json:"enabled,omitempty"`
+
+	// labels are additional labels to add to the PodMonitor resource
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+}
+
 // StarknetRPCSpec defines the desired state of StarknetRPC.
 type StarknetRPCSpec struct {
 	// network The network the node will provide and connect to
@@ -81,7 +94,7 @@ type StarknetRPCSpec struct {
 	// resources is the amount of resources dedicated to the StarknetRPC pod
 	//
 	// +optional
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources corev1.ResourceRequirements `json:"resources,omitzero"`
 
 	// image is the image used for the RPC node itself
 	//
@@ -101,6 +114,10 @@ type StarknetRPCSpec struct {
 	// layer1RpcSecret Is the secret containing the Layer 1 RPC secret key
 	// for synchronization
 	Layer1RpcSecret corev1.SecretKeySelector `json:"layer1RpcSecret"`
+
+	// podMonitor is the configuration for Prometheus monitoring via PodMonitor
+	// +optional
+	PodMonitor *PodMonitor `json:"podMonitor,omitempty"`
 }
 
 // StarknetRPCStatus defines the observed state of StarknetRPC.
@@ -137,7 +154,7 @@ type StarknetRPC struct {
 // StarknetRPCList contains a list of StarknetRPC.
 type StarknetRPCList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []StarknetRPC `json:"items"`
 }
 

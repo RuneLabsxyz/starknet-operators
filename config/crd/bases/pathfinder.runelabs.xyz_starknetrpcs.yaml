@@ -75,6 +75,23 @@ spec:
                   to
                 minLength: 0
                 type: string
+              podMonitor:
+                description: podMonitor is the configuration for Prometheus monitoring
+                  via PodMonitor
+                properties:
+                  enabled:
+                    default: false
+                    description: |-
+                      enabled indicates if the PodMonitor should be created for monitoring.
+                      When false (default), no PodMonitor will be created.
+                    type: boolean
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: labels are additional labels to add to the PodMonitor
+                      resource
+                    type: object
+                type: object
               resources:
                 description: resources is the amount of resources dedicated to the
                   StarknetRPC pod

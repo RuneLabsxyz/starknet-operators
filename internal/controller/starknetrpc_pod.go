@@ -114,6 +114,7 @@ func (r *StarknetRPCReconciler) GetWantedPod(cluster *v1alpha1.StarknetRPC) core
 
 	var labels map[string]string = map[string]string{
 		"rpc.runelabs.xyz/type": "starknet",
+		"rpc.runelabs.xyz/name": cluster.Name,
 		"runelabs.xyz/network":  cluster.Spec.Network,
 	}
 

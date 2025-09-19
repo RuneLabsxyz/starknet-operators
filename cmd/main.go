@@ -38,6 +38,8 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+
 	pathfinderv1alpha1 "github.com/runelabs-xyz/starknet-operators/api/v1alpha1"
 	"github.com/runelabs-xyz/starknet-operators/internal/controller"
 	// +kubebuilder:scaffold:imports
@@ -52,6 +54,13 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(pathfinderv1alpha1.AddToScheme(scheme))
+
+	// Add Prometheus monitoring scheme if available
+	// This allows the operator to work even without Prometheus Operator installed
+	if err := monitoringv1.AddToScheme(scheme); err != nil {
+		setupLog.V(1).Info("Prometheus monitoring scheme could not be registered", "error", err)
+	}
+
 	// +kubebuilder:scaffold:scheme
 }
 

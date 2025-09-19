@@ -20,6 +20,7 @@ import (
 	"context"
 	"time"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -44,6 +45,7 @@ import (
 //+kubebuilder:rbac:groups=core,resources=pods/proxy,verbs=get;create
 //+kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=podmonitors,verbs=get;list;watch;create;update;patch;delete
 
 // StarknetRPCReconciler reconciles a StarknetRPC object
 type StarknetRPCReconciler struct {
@@ -115,6 +117,17 @@ func (r *StarknetRPCReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 
+	// Reconcile PodMonitor for metrics collection
+	result, err = r.ReconcilePodMonitor(ctx, rpc)
+	if err != nil {
+		if err == errs.ErrNextLoop {
+			return *result, nil
+		}
+		logger.Error(err, "Error while reconciling PodMonitor")
+		// Don't fail the reconciliation if monitoring setup fails
+		// as it's not critical for the RPC functionality
+	}
+
 	// If the archive was restored correctly, we can finally create the pod.
 	// TODO: Monitor the sync status
 	// TODO: If the status is ready, change the syncstatus condition to true
@@ -125,11 +138,17 @@ func (r *StarknetRPCReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *StarknetRPCReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&pathfinderv1alpha1.StarknetRPC{}).
 		Owns(&corev1.Pod{}).
 		Owns(&batchv1.Job{}).
-		Owns(&corev1.PersistentVolumeClaim{}).
-		Named("starknetrpc").
-		Complete(r)
+		Owns(&corev1.PersistentVolumeClaim{})
+
+	// Only watch PodMonitor if the CRD is available
+	// This allows the operator to work even without Prometheus Operator installed
+	if r.Scheme.Recognizes(monitoringv1.SchemeGroupVersion.WithKind("PodMonitor")) {
+		builder = builder.Owns(&monitoringv1.PodMonitor{})
+	}
+
+	return builder.Named("starknetrpc").Complete(r)
 }

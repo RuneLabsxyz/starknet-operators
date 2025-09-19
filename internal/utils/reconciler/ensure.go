@@ -36,12 +36,22 @@ func CreateOrReconcile[T client.Object](ctx context.Context, c client.Client, ob
 	}
 
 	// Then, reconcile the object if it exists
+	updated := false
 	for _, reconciler := range reconcilers {
 		if !reconciler.IsUpToDate(object) {
 			if err := reconciler.Update(object); err != nil {
 				return false, err
 			}
+			updated = true
 		}
+	}
+
+	// Persist the changes if any reconciler updated the object
+	if updated {
+		if err := c.Update(ctx, object); err != nil {
+			return false, err
+		}
+		logger.Info("Updated object")
 	}
 
 	return false, nil

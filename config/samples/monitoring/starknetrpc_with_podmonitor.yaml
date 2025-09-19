@@ -1,0 +1,53 @@
+apiVersion: pathfinder.runelabs.xyz/v1alpha1
+kind: StarknetRPC
+metadata:
+  name: starknet-mainnet-with-monitoring
+  namespace: default
+spec:
+  network: mainnet
+
+  # PodMonitor configuration for Prometheus monitoring
+  podMonitor:
+    # Enable PodMonitor creation
+    enabled: true
+    # Add custom labels to the PodMonitor resource
+    # These labels can be used by Prometheus to discover the PodMonitor
+    labels:
+      prometheus: kube-prometheus
+      team: platform
+      environment: production
+
+  # Archive snapshot configuration
+  restoreArchive:
+    enable: false
+    fileName: mainnet-snapshot.tar.gz
+    checksum: abc123def456
+    storage:
+      size: 200Gi
+      class: fast-ssd
+
+  # Main storage configuration
+  storage:
+    size: 500Gi
+    class: fast-ssd
+
+  # Layer 1 RPC configuration
+  layer1RpcSecret:
+    name: ethereum-rpc-secret
+    key: url
+
+  # Resource requirements (optional)
+  resources:
+    requests:
+      memory: "8Gi"
+      cpu: "2"
+    limits:
+      memory: "16Gi"
+      cpu: "4"
+
+  # Node tolerations (optional)
+  tolerations:
+    - key: "starknet"
+      operator: "Equal"
+      value: "dedicated"
+      effect: "NoSchedule"
