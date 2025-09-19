@@ -187,7 +187,7 @@ var _ = Describe("StarknetRPC PodMonitor Controller", func() {
 				Namespace: namespace,
 			}, podMonitor)
 			Expect(err).To(HaveOccurred())
-			Expect(client.IgnoreNotFound(err)).To(BeNil())
+			Expect(client.IgnoreNotFound(err)).To(Succeed())
 		})
 
 		It("Should update PodMonitor when specs change", func() {
@@ -254,7 +254,7 @@ var _ = Describe("StarknetRPC PodMonitor Controller", func() {
 				Namespace: namespace,
 			}, podMonitor)
 			Expect(err).To(HaveOccurred())
-			Expect(client.IgnoreNotFound(err)).To(BeNil())
+			Expect(client.IgnoreNotFound(err)).To(Succeed())
 		})
 
 		It("Should not create a PodMonitor when PodMonitor field is nil", func() {
@@ -280,7 +280,7 @@ var _ = Describe("StarknetRPC PodMonitor Controller", func() {
 				Namespace: namespace,
 			}, podMonitor)
 			Expect(err).To(HaveOccurred())
-			Expect(client.IgnoreNotFound(err)).To(BeNil())
+			Expect(client.IgnoreNotFound(err)).To(Succeed())
 		})
 
 		It("Should delete existing PodMonitor when monitoring is disabled", func() {
@@ -318,7 +318,7 @@ var _ = Describe("StarknetRPC PodMonitor Controller", func() {
 				Namespace: namespace,
 			}, podMonitor)
 			Expect(err).To(HaveOccurred())
-			Expect(client.IgnoreNotFound(err)).To(BeNil())
+			Expect(client.IgnoreNotFound(err)).To(Succeed())
 		})
 
 		It("Should add custom labels to PodMonitor when provided", func() {
